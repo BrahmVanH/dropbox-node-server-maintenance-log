@@ -1,0 +1,23 @@
+{
+	"name": "oredock_maintenance",
+	"version": "1.0.0",
+	"description": "small server to monitor maintenance log in dropbox and email staff with weekly tasks",
+	"main": "index.ts",
+	"scripts": {
+		"start": "ts-node index.ts",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "brahm van houzen",
+	"license": "MIT",
+	"dependencies": {
+		"dotenv": "^16.4.5",
+		"dropbox": "^10.34.0",
+		"express": "^4.18.2",
+		"isomorphic-fetch": "^3.0.0"
+	},
+	"devDependencies": {
+		"@types/isomorphic-fetch": "^0.0.39",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.3.3"
+	}
+}
