@@ -14,6 +14,7 @@ import xlsx from 'node-xlsx';
 import FileSystem from 'fs';
 
 import { promisify } from 'util';
+import { getJsDateFromExcel } from './utils/helpers';
 
 // Configure dotenv
 dotenv.config();
@@ -96,7 +97,7 @@ const parseXlsxFile = async (filePath: string) => {
 				// Check if the cell value is a date (numeric representation)
 				if (!isNaN(cell) && Number.isInteger(cell)) {
 					// Convert numeric date to Date object
-					return new Date((cell - 1) * 24 * 60 * 60 * 1000); // Convert days to milliseconds
+					return getJsDateFromExcel(cell); // Convert days to milliseconds
 				}
 				return cell;
 			});
