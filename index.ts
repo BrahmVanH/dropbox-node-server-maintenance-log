@@ -15,9 +15,11 @@ app.use(express.json());
 
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
-	// Schedule the task to run every Sunday at 00:00 (midnight)
-	cron.schedule('0 0 * * 0', () => {
-		console.log('Running weekly task...');
 		downloadXlsxAndParseToJson();
-	});
+
+	// Schedule the task to run every Sunday at 00:00 (midnight)
+	// cron.schedule('0 0 * * 0', () => {
+	// 	console.log('Running weekly task...');
+	// 	downloadXlsxAndParseToJson();
+	// });
 });

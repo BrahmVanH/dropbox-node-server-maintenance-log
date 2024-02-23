@@ -17,7 +17,7 @@ import xlsx from 'node-xlsx';
 import FileSystem from 'fs';
 
 import { promisify } from 'util';
-import { getJsDateFromExcel } from './utils/helpers';
+import { getJsDateFromExcel, printJsonFile } from './utils/helpers';
 
 // Configure dotenv
 configDotenv();
@@ -145,6 +145,7 @@ export const downloadXlsxAndParseToJson = async () => {
 
 		if (jsonWriteSuccess) {
 			console.log('flow successful');
+      printJsonFile();
 		} else {
 			console.log('flow failed');
 		}
