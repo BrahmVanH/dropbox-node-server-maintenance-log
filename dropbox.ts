@@ -17,7 +17,7 @@ import xlsx from 'node-xlsx';
 import FileSystem from 'fs';
 
 import { promisify } from 'util';
-import { getJsDateFromExcel, printJsonFile } from './utils/helpers';
+import { IMaintenanceTask, getJsDateFromExcel, getThisWeeksTasks } from './utils/helpers';
 
 // Configure dotenv
 configDotenv();
@@ -144,13 +144,32 @@ export const downloadXlsxAndParseToJson = async () => {
 		}
 
 		if (jsonWriteSuccess) {
+			return true;
 			console.log('flow successful');
-      printJsonFile();
 		} else {
+			return false;
 			console.log('flow failed');
 		}
 	} catch (err) {
 		console.error('Error downloading and parsing file: ', err);
 		throw new Error('There was an error downloading and parsing file');
+	}
+};
+
+export const handleGetThisWeeksTasks = async () => {
+	try {
+		let thisWeeksTasks: IMaintenanceTask[] = [];
+		const success = await downloadXlsxAndParseToJson();
+
+		if (success) {
+			thisWeeksTasks = getThisWeeksTasks();
+		}
+		if (thisWeeksTasks.length !== 0) {
+			console.log('This weeks tasks: ', thisWeeksTasks);
+			// return thisWeeksTasks;
+		}
+	} catch (err) {
+		console.error("Error getting this week's tasks: ", err);
+		throw new Error("There was an error getting this week's tasks");
 	}
 };

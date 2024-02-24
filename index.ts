@@ -1,8 +1,9 @@
 import express from 'express';
 import path from 'path';
 import { configDotenv } from 'dotenv';
-import { downloadXlsxAndParseToJson } from './dropbox';
+import { downloadXlsxAndParseToJson, handleGetThisWeeksTasks } from './dropbox';
 import cron from 'node-cron';
+import { getThisWeeksTasks } from './utils/helpers';
 
 const PORT = process.env.PORT || 3000;
 
@@ -15,7 +16,7 @@ app.use(express.json());
 
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
-		downloadXlsxAndParseToJson();
+	handleGetThisWeeksTasks();
 
 	// Schedule the task to run every Sunday at 00:00 (midnight)
 	// cron.schedule('0 0 * * 0', () => {
