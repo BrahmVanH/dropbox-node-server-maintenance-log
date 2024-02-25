@@ -17,7 +17,7 @@ import xlsx from 'node-xlsx';
 import FileSystem from 'fs';
 
 import { promisify } from 'util';
-import { IMaintenanceTask, getJsDateFromExcel, getThisWeeksTasks } from './utils/helpers';
+import { IMaintenanceTask, getJsDateFromExcel, getThisWeeksTasks } from '../utils/helpers';
 
 // Configure dotenv
 configDotenv();
@@ -90,7 +90,6 @@ const fetchFromDropbox = async () => {
 		if (data) {
 			const fileName = data.result.name.split(' ').join('');
 			const filePath = `dist/${fileName}`;
-			// fileName.includes('.xlsx') ? fileName = `dist/${fileName}` : '';
 			await writeFileAsync(filePath, (<any>data).result.fileBinary, { encoding: 'binary' });
 			console.log(`File: ${fileName} saved.`);
 			return { writeSuccessful: true, filePath };
@@ -106,13 +105,10 @@ const parseXlsxFile = async (filePath: string) => {
 	try {
 		// Remove .xlsx extension and any spaces from file name
 		const strippedFileName = filePath.split('.')[0];
-		// const formattedFileName = strippedFileName.join('');
 
 		// Parse xlsx file and write to json file
 		const workSheetsFromFile = xlsx.parse(filePath);
-		// const data = workSheetsFromFile[0];
 
-		// console.log(`File: ${formattedFileName}.json saved.`);
 		const data = workSheetsFromFile[0].data;
 
 		// Convert date values to Date objects
@@ -144,11 +140,11 @@ export const downloadXlsxAndParseToJson = async () => {
 		}
 
 		if (jsonWriteSuccess) {
-			return true;
 			console.log('flow successful');
+			return true;
 		} else {
-			return false;
 			console.log('flow failed');
+			return false;
 		}
 	} catch (err) {
 		console.error('Error downloading and parsing file: ', err);

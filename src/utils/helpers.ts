@@ -1,7 +1,7 @@
 import { promisify } from 'util';
 import { readFile } from 'fs';
 
-import maintenanceLog from '../dist/maintenanceLog.json';
+import maintenanceLog from '../../dist/maintenanceLog.json';
 
 const readFileAsync = promisify(readFile);
 
@@ -55,11 +55,11 @@ const getTimeDifferenceFromNow = (date: string) => {
 
 export const getThisWeeksTasks = () => {
 	const maintenanceTasks = getMaintenanceTasks();
-  console.log("maintenance tasks from getThisWeeksTasks", maintenanceTasks);
+	console.log('maintenance tasks from getThisWeeksTasks', maintenanceTasks);
 	const thisWeeksTasks = maintenanceTasks.filter((task) => {
 		const daysDifference = getTimeDifferenceFromNow(task.date);
 		return daysDifference < 7;
 	});
-  
+
 	return thisWeeksTasks;
 };

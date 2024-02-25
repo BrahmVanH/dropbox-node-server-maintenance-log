@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { configDotenv } from 'dotenv';
-import { downloadXlsxAndParseToJson, handleGetThisWeeksTasks } from './dropbox';
+import { downloadXlsxAndParseToJson, handleGetThisWeeksTasks } from './services/dropbox';
 import cron from 'node-cron';
 import { getThisWeeksTasks } from './utils/helpers';
 
