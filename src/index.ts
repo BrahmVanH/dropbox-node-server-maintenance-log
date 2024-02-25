@@ -1,9 +1,7 @@
 import express from 'express';
-import path from 'path';
 import { configDotenv } from 'dotenv';
-import { downloadXlsxAndParseToJson, handleGetThisWeeksTasks } from './services/dropbox';
+import { handleGetThisWeeksTasks } from './services/dropbox';
 import cron from 'node-cron';
-import { getThisWeeksTasks } from './utils/helpers';
 
 const PORT = process.env.PORT || 3000;
 

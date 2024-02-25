@@ -4,7 +4,7 @@
 	"description": "small server to monitor maintenance log in dropbox and email staff with weekly tasks",
 	"main": "index.ts",
 	"scripts": {
-		"start": "ts-node index.ts",
+		"start": "ts-node src/index.ts",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"author": "brahm van houzen",
@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@types/node-cron": "^3.0.11",
 		"@types/nodemailer": "^6.4.14",
+		"date-fns": "^3.3.1",
 		"dotenv": "^16.4.5",
 		"dropbox": "^10.34.0",
 		"dropbox-v2-api": "^2.5.11",

@@ -8,6 +8,7 @@ const readFileAsync = promisify(readFile);
 export interface IMaintenanceTask {
 	title: string;
 	description: string;
+	lastCompleted: string;
 	date: string;
 }
 
@@ -23,7 +24,6 @@ export const getJsDateFromExcel = (excelDate: number) => {
 	const delta = excelDate - magicNumberOfDays;
 	const parsed = delta * missingLeapYear;
 	const date = new Date(parsed);
-
 	return date;
 };
 
@@ -32,18 +32,18 @@ const getMaintenanceTasks = () => {
 		throw new Error('Maintenance tasks data is not an array.');
 	}
 	const maintenanceTasks: IMaintenanceTask[] = maintenanceLog
-		.filter((task) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== ('Cadence' || 'Daily') && task[5] === 'Brahm')
+		.filter((task) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== ('Cadence' || 'Daily') && task[5] === 'Brahm' && task[8] !== null)
 		.map((task) => ({
 			title: task[3],
 			description: task[4],
+			lastCompleted: task[8],
 			date: task[10],
 		})) as IMaintenanceTask[];
 
-	console.log(maintenanceTasks);
 	return maintenanceTasks;
 };
 
-getMaintenanceTasks();
+// getMaintenanceTasks();
 
 const getTimeDifferenceFromNow = (date: string) => {
 	const now = new Date();
@@ -55,7 +55,6 @@ const getTimeDifferenceFromNow = (date: string) => {
 
 export const getThisWeeksTasks = () => {
 	const maintenanceTasks = getMaintenanceTasks();
-	console.log('maintenance tasks from getThisWeeksTasks', maintenanceTasks);
 	const thisWeeksTasks = maintenanceTasks.filter((task) => {
 		const daysDifference = getTimeDifferenceFromNow(task.date);
 		return daysDifference < 7;
