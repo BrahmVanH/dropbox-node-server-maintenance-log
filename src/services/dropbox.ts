@@ -16,25 +16,17 @@ import xlsx from 'node-xlsx';
 // Import the file system module
 import FileSystem from 'fs';
 
+import { formatDistanceToNowStrict } from 'date-fns';
+
 import { promisify } from 'util';
-import { IMaintenanceTask, getJsDateFromExcel, getThisWeeksTasks } from '../utils/helpers';
+import { IMaintenanceTask, getJsDateFromExcel, getTimeDifferenceFromNow } from '../utils/helpers';
+import maintenanceLog from '../../dist/maintenanceLog.json';
 
 // Configure dotenv
 configDotenv();
 
-const appSecret = process.env.DROPBOX_APP_SECRET ?? '';
-const redirectUri = process.env.DROPBOX_REDIRECT_URI ?? '';
-const authorizationCode = process.env.DROPBOX_AUTHORIZATION_CODE ?? '';
-const refreshToken = process.env.DROPBOX_REFRESH_TOKEN ?? '';
-
-// Define folder path for desired folder from Dropbox
-const folderPath = process.env.DROPBOX_FOLDER_PATH ?? '';
-
 // Define shared link for desired file from Dropbox
 const sharedLink = process.env.DROPBOX_MAINTENANCE_FILE_LINK ?? '';
-
-// Create an instance of the Dropbox SDK
-// const dbx = new Dropbox({accessToken, fetch: fetch });
 
 // Wrap writeFile in promise to use async/await
 const writeFileAsync = promisify(FileSystem.writeFile);
@@ -101,6 +93,8 @@ const fetchFromDropbox = async () => {
 	return { writeSuccessful: false, filePath: '' };
 };
 
+// Parse xlsx file to json
+
 const parseXlsxFile = async (filePath: string) => {
 	try {
 		// Remove .xlsx extension and any spaces from file name
@@ -130,7 +124,7 @@ const parseXlsxFile = async (filePath: string) => {
 	}
 };
 
-export const downloadXlsxAndParseToJson = async () => {
+const xlsxToJsonFlow = async () => {
 	try {
 		let jsonWriteSuccess: boolean = false;
 		const { writeSuccessful, filePath } = await fetchFromDropbox();
@@ -152,10 +146,36 @@ export const downloadXlsxAndParseToJson = async () => {
 	}
 };
 
+const getMaintenanceTasks = () => {
+	if (!Array.isArray(maintenanceLog)) {
+		throw new Error('Maintenance tasks data is not an array.');
+	}
+	const maintenanceTasks: IMaintenanceTask[] = maintenanceLog
+		.filter((task) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== 'Cadence' && task[0] !== 'Daily' && task[5] === 'Brahm' && task[8] !== null)
+		.map((task) => ({
+			title: task[3],
+			description: task[4],
+			lastCompleted: task[8] ? formatDistanceToNowStrict(task[8]) : 'N/A',
+			date: task[10],
+		})) as IMaintenanceTask[];
+
+	return maintenanceTasks;
+};
+
+const getThisWeeksTasks = () => {
+	const maintenanceTasks = getMaintenanceTasks();
+	const thisWeeksTasks = maintenanceTasks.filter((task) => {
+		const daysDifference = getTimeDifferenceFromNow(task.date);
+		return daysDifference < 7;
+	});
+
+	return thisWeeksTasks;
+};
+
 export const handleGetThisWeeksTasks = async () => {
 	try {
 		let thisWeeksTasks: IMaintenanceTask[] = [];
-		const success = await downloadXlsxAndParseToJson();
+		const success = await xlsxToJsonFlow();
 
 		if (success) {
 			thisWeeksTasks = getThisWeeksTasks();
