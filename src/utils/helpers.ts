@@ -28,11 +28,11 @@ export const getTimeDifferenceFromNow = (date: string) => {
 const formatEmailText = (nextWeeksTasks: IMaintenanceTask[], nextMonthsTasks: IMaintenanceTask[]) => {
 	let emailText = 'This week:\n\n';
 	nextWeeksTasks.forEach((task) => {
-		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n		Complete By: ${task.completeBy}}\n\n`;
+		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n	Complete By: ${task.completeBy}}\n\n`;
 	});
 	emailText += '\n\nNext 30 days:\n\n';
 	nextMonthsTasks.forEach((task) => {
-		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n		Complete By: ${task.completeBy}}\n\n`;
+		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n	Complete By: ${task.completeBy}}\n\n`;
 	});
 	return emailText;
 };

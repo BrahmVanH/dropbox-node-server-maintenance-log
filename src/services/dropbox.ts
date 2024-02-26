@@ -155,7 +155,7 @@ const getMaintenanceTasks = () => {
 			title: task[3],
 			description: task[4],
 			lastCompleted: task[8] ? formatDistanceToNowStrict(task[8]) : 'N/A',
-			completeBy: task[10],
+			completeBy: task[10] ? formatDistanceToNowStrict(task[10]) : 'N/A',
 		})) as IMaintenanceTask[];
 
 	return maintenanceTasks;
