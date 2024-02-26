@@ -7,7 +7,6 @@
 		"start": "ts-node src/index.ts",
 		"watch": "nodemon server.ts",
 		"build": "tsc",
-		"heroku-postbuild": "npm run build",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"author": "brahm van houzen",
