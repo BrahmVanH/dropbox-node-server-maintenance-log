@@ -3,7 +3,7 @@
 import { Dropbox } from "dropbox";
 
 
-const getCurrentUserInfo = async (dbx: Dropbox) => {
+export const getCurrentUserInfo = async (dbx: Dropbox) => {
 	dbx
 		.usersGetCurrentAccount()
 		.then(function (response) {
@@ -16,7 +16,7 @@ const getCurrentUserInfo = async (dbx: Dropbox) => {
 
 // Make a request to the /files/list_folder endpoint and log the response - this only reads folder metadata
 
-const listFilesInFolder = async (dbx: Dropbox, folderPath: string) => {
+export const listFilesInFolder = async (dbx: Dropbox, folderPath: string) => {
 	dbx
 		.filesListFolder({ path: folderPath })
 		.then(function (response) {
