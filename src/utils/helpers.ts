@@ -2,10 +2,6 @@ import { formatDistanceToNow } from 'date-fns';
 import handleGetTasks from '../services/dropbox';
 import sendEmail from '../services/nodemailer';
 
-import FileSystem from 'fs';
-import { promisify } from 'util';
-
-const writeFileAsync = promisify(FileSystem.writeFile);
 
 export interface IMaintenanceTask {
 	title: string;
@@ -13,11 +9,6 @@ export interface IMaintenanceTask {
 	lastCompleted: string;
 	completeBy: string;
 }
-
-export const createEmptyJsonFile = () => {
-	const filePath = `dist/maintenanceLog.json`;
-	FileSystem.writeFileSync(filePath, '[]');
-};
 
 export const formatBasicDate = (date: string) => {
 	const month = new Date(date).getMonth() + 1;
