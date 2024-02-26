@@ -4,7 +4,7 @@
 	"description": "small server to monitor maintenance log in dropbox and email staff with weekly tasks",
 	"main": "index.ts",
 	"scripts": {
-		"start": "ts-node src/index.ts",
+		"start": "node build/src/index.js",
 		"watch": "nodemon server.ts",
 		"build": "tsc",
 		"heroku-postbuild": "npm run build",
