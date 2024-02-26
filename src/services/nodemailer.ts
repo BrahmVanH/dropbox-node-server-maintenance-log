@@ -1,6 +1,6 @@
 import nodeMailer from 'nodemailer';
 
-export const sendEmail = async (text: string) => {
+const sendEmail = async (text: string) => {
 	const from = process.env.EMAIL_ADDRESS;
 	const to = process.env.EMAIL_ADDRESS;
 	const subject = 'This Weeks Tasks';
@@ -9,6 +9,9 @@ export const sendEmail = async (text: string) => {
 		auth: {
 			user: process.env.EMAIL_ADDRESS,
 			pass: process.env.EMAIL_PASSWORD,
+		},
+		tls: {
+			rejectUnauthorized: false, // Allow self-signed certificates
 		},
 	});
 
@@ -26,3 +29,5 @@ export const sendEmail = async (text: string) => {
 		console.error('Error sending email:', error);
 	}
 };
+
+export default sendEmail;

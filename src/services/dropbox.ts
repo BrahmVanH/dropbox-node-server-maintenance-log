@@ -23,10 +23,9 @@ import { IMaintenanceTask, getJsDateFromExcel, getTimeDifferenceFromNow } from '
 import maintenanceLog from '../../dist/maintenanceLog.json';
 
 // Configure dotenv
-configDotenv();
+// configDotenv();
 
 // Define shared link for desired file from Dropbox
-const sharedLink = process.env.DROPBOX_MAINTENANCE_FILE_LINK ?? '';
 
 // Wrap writeFile in promise to use async/await
 const writeFileAsync = promisify(FileSystem.writeFile);
@@ -69,6 +68,7 @@ const fetchFromDropbox = async () => {
 	const refreshToken = process.env.DROPBOX_REFRESH_TOKEN ?? '';
 	const appKey = process.env.DROPBOX_APP_KEY ?? '';
 	const appSecret = process.env.DROPBOX_APP_SECRET ?? '';
+	const sharedLink = process.env.DROPBOX_MAINTENANCE_FILE_LINK ?? '';
 
 	// Refresh access token
 	const accessToken = await refreshAccessToken(refreshToken, appKey, appSecret);
@@ -162,7 +162,7 @@ const getMaintenanceTasks = () => {
 	return maintenanceTasks;
 };
 
-const getThisWeeksTasks = () => {
+const getNextWeeksTasks = () => {
 	const maintenanceTasks = getMaintenanceTasks();
 	const thisWeeksTasks = maintenanceTasks.filter((task) => {
 		const daysDifference = getTimeDifferenceFromNow(task.date);
@@ -172,20 +172,35 @@ const getThisWeeksTasks = () => {
 	return thisWeeksTasks;
 };
 
-export const handleGetThisWeeksTasks = async () => {
+const getNextMonthsTasks = () => {
+	const maintenanceTasks = getMaintenanceTasks();
+	const thisMonthsTasks = maintenanceTasks.filter((task) => {
+		const daysDifference = getTimeDifferenceFromNow(task.date);
+		return daysDifference < 30;
+	});
+
+	return thisMonthsTasks;
+};
+
+const handleGetTasks = async () => {
 	try {
-		let thisWeeksTasks: IMaintenanceTask[] = [];
+		let nextWeeksTasks: IMaintenanceTask[] = [];
+		let nextMonthsTasks: IMaintenanceTask[] = [];
 		const success = await xlsxToJsonFlow();
 
 		if (success) {
-			thisWeeksTasks = getThisWeeksTasks();
+			nextWeeksTasks = getNextWeeksTasks();
+			nextMonthsTasks = getNextMonthsTasks();
 		}
-		if (thisWeeksTasks.length !== 0) {
-			console.log('This weeks tasks: ', thisWeeksTasks);
-			// return thisWeeksTasks;
+		if (nextWeeksTasks.length !== 0 && nextMonthsTasks.length !== 0) {
+			console.log('This weeks tasks: ', nextWeeksTasks);
+			console.log('This weeks tasks: ', nextMonthsTasks);
+			return { nextWeeksTasks, nextMonthsTasks };
 		}
 	} catch (err) {
 		console.error("Error getting this week's tasks: ", err);
 		throw new Error("There was an error getting this week's tasks");
 	}
 };
+
+export default handleGetTasks;
