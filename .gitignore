@@ -18,7 +18,6 @@
 .env.test.local
 .env.production.local
 dist
-download
 
 npm-debug.log*
 yarn-debug.log*
