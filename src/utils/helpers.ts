@@ -1,6 +1,31 @@
+import { formatDistanceToNow } from 'date-fns';
 import handleGetTasks from '../services/dropbox';
 import sendEmail from '../services/nodemailer';
-import { IMaintenanceTask } from '../types';
+
+import FileSystem from 'fs';
+import { promisify } from 'util';
+
+const writeFileAsync = promisify(FileSystem.writeFile);
+
+export interface IMaintenanceTask {
+	title: string;
+	description: string;
+	lastCompleted: string;
+	completeBy: string;
+}
+
+export const createEmptyJsonFile = () => {
+	const filePath = `dist/maintenanceLog.json`;
+	FileSystem.writeFileSync(filePath, '[]');
+};
+
+export const formatBasicDate = (date: string) => {
+	const month = new Date(date).getMonth() + 1;
+	const day = new Date(date).getDate();
+	const year = new Date(date).getFullYear();
+	const formattedDate = `${month}/${day}/${year}`;
+	return formattedDate;
+};
 
 // xlsx date formatting function from telerik
 export const getJsDateFromExcel = (excelDate: number) => {
@@ -8,7 +33,8 @@ export const getJsDateFromExcel = (excelDate: number) => {
 	const missingLeapYear = secondsInDay * 1000;
 	const magicNumberOfDays = 25567 + 2;
 	if (!Number(excelDate)) {
-		alert('wrong input format');
+		console.log('bad excelDate: ', excelDate);
+		throw new Error('wrong input format');
 	}
 
 	const delta = excelDate - magicNumberOfDays;
@@ -25,14 +51,24 @@ export const getTimeDifferenceFromNow = (date: string) => {
 	return daysDifference;
 };
 
+export const handleFormatDistanceToNow = (date: string) => {
+	const timeDifference = getTimeDifferenceFromNow(date);
+	const formattedDistance = formatDistanceToNow(date);
+	if (timeDifference < 0) {
+		return `Overdue by ${formattedDistance}`;
+	} else {
+		return `Due in ${formattedDistance}`;
+	}
+};
+
 const formatEmailText = (nextWeeksTasks: IMaintenanceTask[], nextMonthsTasks: IMaintenanceTask[]) => {
 	let emailText = 'This week:\n\n';
 	nextWeeksTasks.forEach((task) => {
-		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n	Complete By: ${task.completeBy}}\n\n`;
+		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n	Complete By: ${task.completeBy}\n\n`;
 	});
 	emailText += '\n\nNext 30 days:\n\n';
 	nextMonthsTasks.forEach((task) => {
-		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n	Complete By: ${task.completeBy}}\n\n`;
+		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n	Complete By: ${task.completeBy}\n\n`;
 	});
 	return emailText;
 };
