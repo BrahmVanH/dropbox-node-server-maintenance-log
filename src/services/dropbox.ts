@@ -20,7 +20,6 @@ import { formatDistanceToNowStrict } from 'date-fns';
 
 import { promisify } from 'util';
 import { getJsDateFromExcel, getTimeDifferenceFromNow } from '../utils/helpers';
-import maintenanceLog from '../../download/maintenanceLog.json';
 
 import { IMaintenanceTask } from '../types';
 
@@ -145,40 +144,62 @@ const xlsxToJsonFlow = async () => {
 	}
 };
 
-const getMaintenanceTasks = () => {
-	if (!Array.isArray(maintenanceLog)) {
-		throw new Error('Maintenance tasks data is not an array.');
+// Import maintenance tasks after the file has been created and format to useable array;
+const getMaintenanceTasks = async () => {
+	let maintenanceLog: any;
+	try {
+		maintenanceLog = await import('../../download/maintenanceLog.json');
+		if (!Array.isArray(maintenanceLog)) {
+			throw new Error('Maintenance tasks data is not an array.');
+		}
+		const maintenanceTasks: IMaintenanceTask[] = maintenanceLog
+			.filter((task) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== 'Cadence' && task[0] !== 'Daily' && task[5] === 'Brahm' && task[8] !== null)
+			.map((task) => ({
+				title: task[3],
+				description: task[4],
+				lastCompleted: task[8] ? formatDistanceToNowStrict(task[8]) : 'N/A',
+				completeBy: task[10] ? formatDistanceToNowStrict(task[10]) : 'N/A',
+			})) as IMaintenanceTask[];
+
+		return maintenanceTasks;
+	} catch (err) {
+		console.error('Error getting maintenance tasks: ', err);
+		throw new Error('There was an error getting maintenance tasks');
 	}
-	const maintenanceTasks: IMaintenanceTask[] = maintenanceLog
-		.filter((task) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== 'Cadence' && task[0] !== 'Daily' && task[5] === 'Brahm' && task[8] !== null)
-		.map((task) => ({
-			title: task[3],
-			description: task[4],
-			lastCompleted: task[8] ? formatDistanceToNowStrict(task[8]) : 'N/A',
-			completeBy: task[10] ? formatDistanceToNowStrict(task[10]) : 'N/A',
-		})) as IMaintenanceTask[];
-
-	return maintenanceTasks;
 };
 
-const getNextWeeksTasks = () => {
-	const maintenanceTasks = getMaintenanceTasks();
-	const thisWeeksTasks = maintenanceTasks.filter((task) => {
-		const daysDifference = getTimeDifferenceFromNow(task.completeBy);
-		return daysDifference < 7;
-	});
+// Get tasks for the next week
+const getNextWeeksTasks = async () => {
+	try {
+		const maintenanceTasks = await getMaintenanceTasks();
+		const thisWeeksTasks = maintenanceTasks.filter((task) => {
+			const daysDifference = getTimeDifferenceFromNow(task.completeBy);
+			return daysDifference < 7;
+		});
 
-	return thisWeeksTasks;
+		return thisWeeksTasks;
+	} catch (err) {
+		console.error("Error getting this week's tasks: ", err);
+		throw new Error("There was an error getting this week's tasks");
+	}
 };
 
-const getNextMonthsTasks = () => {
-	const maintenanceTasks = getMaintenanceTasks();
-	const thisMonthsTasks = maintenanceTasks.filter((task) => {
-		const daysDifference = getTimeDifferenceFromNow(task.completeBy);
-		return daysDifference < 30;
-	});
+// Get tasks for the next 30 days
+const getNextMonthsTasks = async () => {
+	try {
+		const maintenanceTasks = await getMaintenanceTasks();
+		const thisMonthsTasks = maintenanceTasks.filter((task) => {
+			const daysDifference = getTimeDifferenceFromNow(task.completeBy);
+			if (daysDifference < 30 && daysDifference > 7) {
+				return daysDifference;
+			}
+		});
 
-	return thisMonthsTasks;
+		return thisMonthsTasks;
+	} catch (err) {
+		console.error("Error getting this month's tasks: ", err);
+		throw new Error("There was an error getting this month's tasks");
+	}
 };
 
 const handleGetTasks = async () => {
@@ -188,8 +209,8 @@ const handleGetTasks = async () => {
 		const success = await xlsxToJsonFlow();
 
 		if (success) {
-			nextWeeksTasks = getNextWeeksTasks();
-			nextMonthsTasks = getNextMonthsTasks();
+			nextWeeksTasks = await getNextWeeksTasks();
+			nextMonthsTasks = await getNextMonthsTasks();
 		}
 		if (nextWeeksTasks.length !== 0 && nextMonthsTasks.length !== 0) {
 			console.log('This weeks tasks: ', nextWeeksTasks);
