@@ -19,10 +19,10 @@ import FileSystem from 'fs';
 import { formatDistanceToNowStrict } from 'date-fns';
 
 import { promisify } from 'util';
-import { IMaintenanceTask, getJsDateFromExcel, getTimeDifferenceFromNow } from '../utils/helpers';
+import { getJsDateFromExcel, getTimeDifferenceFromNow } from '../utils/helpers';
 import maintenanceLog from '../../download/maintenanceLog.json';
 
-
+import { IMaintenanceTask } from '../types';
 
 // Define shared link for desired file from Dropbox
 
@@ -155,7 +155,7 @@ const getMaintenanceTasks = () => {
 			title: task[3],
 			description: task[4],
 			lastCompleted: task[8] ? formatDistanceToNowStrict(task[8]) : 'N/A',
-			date: task[10],
+			completeBy: task[10],
 		})) as IMaintenanceTask[];
 
 	return maintenanceTasks;
@@ -164,7 +164,7 @@ const getMaintenanceTasks = () => {
 const getNextWeeksTasks = () => {
 	const maintenanceTasks = getMaintenanceTasks();
 	const thisWeeksTasks = maintenanceTasks.filter((task) => {
-		const daysDifference = getTimeDifferenceFromNow(task.date);
+		const daysDifference = getTimeDifferenceFromNow(task.completeBy);
 		return daysDifference < 7;
 	});
 
@@ -174,7 +174,7 @@ const getNextWeeksTasks = () => {
 const getNextMonthsTasks = () => {
 	const maintenanceTasks = getMaintenanceTasks();
 	const thisMonthsTasks = maintenanceTasks.filter((task) => {
-		const daysDifference = getTimeDifferenceFromNow(task.date);
+		const daysDifference = getTimeDifferenceFromNow(task.completeBy);
 		return daysDifference < 30;
 	});
 

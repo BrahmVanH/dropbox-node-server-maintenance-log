@@ -1,12 +1,6 @@
 import handleGetTasks from '../services/dropbox';
 import sendEmail from '../services/nodemailer';
-
-export interface IMaintenanceTask {
-	title: string;
-	description: string;
-	lastCompleted: string;
-	date: string;
-}
+import { IMaintenanceTask } from '../types';
 
 // xlsx date formatting function from telerik
 export const getJsDateFromExcel = (excelDate: number) => {
@@ -34,11 +28,11 @@ export const getTimeDifferenceFromNow = (date: string) => {
 const formatEmailText = (nextWeeksTasks: IMaintenanceTask[], nextMonthsTasks: IMaintenanceTask[]) => {
 	let emailText = 'This week:\n\n';
 	nextWeeksTasks.forEach((task) => {
-		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n\n`;
+		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n		Complete By: ${task.completeBy}}\n\n`;
 	});
 	emailText += '\n\nNext 30 days:\n\n';
 	nextMonthsTasks.forEach((task) => {
-		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n\n`;
+		emailText += `	Title: ${task.title}\n	Description: ${task.description}\n	Last Completed: ${task.lastCompleted}\n		Complete By: ${task.completeBy}}\n\n`;
 	});
 	return emailText;
 };
