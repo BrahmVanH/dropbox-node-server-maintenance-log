@@ -133,7 +133,8 @@ const xlsxToJsonFlow = async () => {
 
 		if (jsonWriteSuccess) {
 			console.log('flow successful');
-			return true;
+			const maintenanceLog = await import(`../../download/maintenanceLog.json`);
+			return maintenanceLog ? maintenanceLog : false;
 		} else {
 			console.log('flow failed');
 			return false;
@@ -145,16 +146,13 @@ const xlsxToJsonFlow = async () => {
 };
 
 // Import maintenance tasks after the file has been created and format to useable array;
-const getMaintenanceTasks = async () => {
-	let maintenanceLog: any;
+const getMaintenanceTasks = async (maintenanceLog: any) => {
 	try {
-		maintenanceLog = await import('../../download/maintenanceLog.json');
-		if (!Array.isArray(maintenanceLog)) {
-			throw new Error('Maintenance tasks data is not an array.');
-		}
+		if (maintenanceLog && Array.isArray(maintenanceLog)) {
+		
 		const maintenanceTasks: IMaintenanceTask[] = maintenanceLog
-			.filter((task) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== 'Cadence' && task[0] !== 'Daily' && task[5] === 'Brahm' && task[8] !== null)
-			.map((task) => ({
+			.filter((task: any) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== 'Cadence' && task[0] !== 'Daily' && task[5] === 'Brahm' && task[8] !== null)
+			.map((task: any) => ({
 				title: task[3],
 				description: task[4],
 				lastCompleted: task[8] ? formatDistanceToNowStrict(task[8]) : 'N/A',
@@ -162,6 +160,9 @@ const getMaintenanceTasks = async () => {
 			})) as IMaintenanceTask[];
 
 		return maintenanceTasks;
+		} else if (!Array.isArray(maintenanceLog)) {
+			throw new Error('Maintenance tasks data is not an array.');
+		}
 	} catch (err) {
 		console.error('Error getting maintenance tasks: ', err);
 		throw new Error('There was an error getting maintenance tasks');
@@ -169,13 +170,13 @@ const getMaintenanceTasks = async () => {
 };
 
 // Get tasks for the next week
-const getNextWeeksTasks = async () => {
+const getNextWeeksTasks = async (maintenanceLog: any) => {
 	try {
-		const maintenanceTasks = await getMaintenanceTasks();
-		const thisWeeksTasks = maintenanceTasks.filter((task) => {
+		const maintenanceTasks = await getMaintenanceTasks(maintenanceLog);
+		const thisWeeksTasks = maintenanceTasks ? maintenanceTasks.filter((task) => {
 			const daysDifference = getTimeDifferenceFromNow(task.completeBy);
 			return daysDifference < 7;
-		});
+		}) : [];
 
 		return thisWeeksTasks;
 	} catch (err) {
@@ -185,15 +186,15 @@ const getNextWeeksTasks = async () => {
 };
 
 // Get tasks for the next 30 days
-const getNextMonthsTasks = async () => {
+const getNextMonthsTasks = async (maintenanceLog: any) => {
 	try {
-		const maintenanceTasks = await getMaintenanceTasks();
-		const thisMonthsTasks = maintenanceTasks.filter((task) => {
+		const maintenanceTasks = await getMaintenanceTasks(maintenanceLog);
+		const thisMonthsTasks = maintenanceTasks ? maintenanceTasks.filter((task) => {
 			const daysDifference = getTimeDifferenceFromNow(task.completeBy);
 			if (daysDifference < 30 && daysDifference > 7) {
 				return daysDifference;
 			}
-		});
+		}) : [];
 
 		return thisMonthsTasks;
 	} catch (err) {
@@ -206,11 +207,11 @@ const handleGetTasks = async () => {
 	try {
 		let nextWeeksTasks: IMaintenanceTask[] = [];
 		let nextMonthsTasks: IMaintenanceTask[] = [];
-		const success = await xlsxToJsonFlow();
+		const maintenanceLog = await xlsxToJsonFlow();
 
-		if (success) {
-			nextWeeksTasks = await getNextWeeksTasks();
-			nextMonthsTasks = await getNextMonthsTasks();
+		if (maintenanceLog) {
+			nextWeeksTasks = await getNextWeeksTasks(maintenanceLog);
+			nextMonthsTasks = await getNextMonthsTasks(maintenanceLog);
 		}
 		if (nextWeeksTasks.length !== 0 && nextMonthsTasks.length !== 0) {
 			console.log('This weeks tasks: ', nextWeeksTasks);
