@@ -16,12 +16,14 @@ import xlsx from 'node-xlsx';
 // Import the file system module
 import FileSystem from 'fs';
 
-import { formatDistanceToNowStrict } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
 import { promisify } from 'util';
-import { getJsDateFromExcel, getTimeDifferenceFromNow } from '../utils/helpers';
+import { IMaintenanceTask, formatBasicDate, getJsDateFromExcel, getTimeDifferenceFromNow, handleFormatDistanceToNow } from '../utils/helpers';
+// import maintenanceLog from '../../dist/maintenanceLog.json';
 
-import { IMaintenanceTask } from '../types';
+// Configure dotenv
+// configDotenv();
 
 // Define shared link for desired file from Dropbox
 
@@ -79,27 +81,27 @@ const fetchFromDropbox = async () => {
 		const data = await dbx.sharingGetSharedLinkFile({ url: sharedLink });
 		if (data) {
 			const fileName = data.result.name.split(' ').join('');
-			const filePath = `download/${fileName}`;
+			const filePath = `dist/${fileName}`;
 			await writeFileAsync(filePath, (<any>data).result.fileBinary, { encoding: 'binary' });
 			console.log(`File: ${fileName} saved.`);
-			return { writeSuccessful: true, filePath };
+			return { writeSuccessful: true, filePath, data: (<any>data).result.fileBinary };
 		}
 	} catch (err) {
 		console.error('Error fetching file from Dropbox: ', err);
 		throw new Error('There was an error fetching file from Dropbox');
 	}
-	return { writeSuccessful: false, filePath: '' };
+	return { writeSuccessful: false, filePath: '', data: null };
 };
 
 // Parse xlsx file to json
 
-const parseXlsxFile = async (filePath: string) => {
+const parseXlsxFile = async (filePath: string, xlsxData: any) => {
 	try {
 		// Remove .xlsx extension and any spaces from file name
 		const strippedFileName = filePath.split('.')[0];
 
 		// Parse xlsx file and write to json file
-		const workSheetsFromFile = xlsx.parse(filePath);
+		const workSheetsFromFile = xlsx.parse(xlsxData);
 
 		const data = workSheetsFromFile[0].data;
 
@@ -107,96 +109,102 @@ const parseXlsxFile = async (filePath: string) => {
 		const convertedData = data.map((row) => {
 			return row.map((cell) => {
 				// Check if the cell value is a date (numeric representation)
-				if (!isNaN(cell) && Number.isInteger(cell)) {
+				if (!isNaN(cell) && cell !== 0 && Number.isInteger(cell)) {
 					// Convert numeric date to Date object
 					return getJsDateFromExcel(cell); // Convert days to milliseconds
 				}
 				return cell;
 			});
 		});
-		await writeFileAsync(`${strippedFileName}.json`, JSON.stringify(convertedData));
-		return true;
+		// await writeFileAsync(`${strippedFileName}.json`, JSON.stringify(convertedData));
+		return data;
 	} catch (err) {
 		console.error('Something went wrong parsing xlsx file: ', err);
 		throw new Error('There was an error parsing xlsx file');
 	}
 };
 
-const xlsxToJsonFlow = async () => {
+export const xlsxToJsonFlow = async () => {
 	try {
-		let jsonWriteSuccess: boolean = false;
-		const { writeSuccessful, filePath } = await fetchFromDropbox();
+		// let jsonWriteSuccess: boolean = false;
+		const { writeSuccessful, filePath, data } = await fetchFromDropbox();
 
-		if (writeSuccessful && filePath.includes('.xlsx')) {
-			jsonWriteSuccess = await parseXlsxFile(filePath);
-		}
-
-		if (jsonWriteSuccess) {
-			console.log('flow successful');
-			const maintenanceLog = await import(`../../download/maintenanceLog.json`);
-			return maintenanceLog ? maintenanceLog : false;
+		if (writeSuccessful && filePath.includes('.xlsx') && data) {
+			const parsedJson = await parseXlsxFile(filePath, data);
+			return parsedJson;
 		} else {
-			console.log('flow failed');
+			console.log('File not parsed, possibly no data or not an xlsx file.');
 			return false;
 		}
+
+		// if (jsonWriteSuccess) {
+		// 	console.log('flow successful');
+		// 	return true;
+		// } else {
+		// 	console.log('flow failed');
+		// 	return false;
+		// }
 	} catch (err) {
 		console.error('Error downloading and parsing file: ', err);
 		throw new Error('There was an error downloading and parsing file');
 	}
 };
 
-// Import maintenance tasks after the file has been created and format to useable array;
-const getMaintenanceTasks = async (maintenanceLog: any) => {
-	try {
-		if (maintenanceLog && Array.isArray(maintenanceLog)) {
-		
-		const maintenanceTasks: IMaintenanceTask[] = maintenanceLog
-			.filter((task: any) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== 'Cadence' && task[0] !== 'Daily' && task[5] === 'Brahm' && task[8] !== null)
-			.map((task: any) => ({
-				title: task[3],
-				description: task[4],
-				lastCompleted: task[8] ? formatDistanceToNowStrict(task[8]) : 'N/A',
-				completeBy: task[10] ? formatDistanceToNowStrict(task[10]) : 'N/A',
-			})) as IMaintenanceTask[];
-
-		return maintenanceTasks;
-		} else if (!Array.isArray(maintenanceLog)) {
-			throw new Error('Maintenance tasks data is not an array.');
-		}
-	} catch (err) {
-		console.error('Error getting maintenance tasks: ', err);
-		throw new Error('There was an error getting maintenance tasks');
+const getMaintenanceTasks = (convertedData: any[]) => {
+	// maintenanceLog = await import('../../dist/maintenanceLog.json');
+	if (!Array.isArray(convertedData)) {
+		throw new Error('Maintenance tasks data is not an array.');
 	}
+	const maintenanceTasks: IMaintenanceTask[] = convertedData
+		.filter((task) => task[9] !== null && task[10] !== null && task[16] !== null && task[0] !== 'Cadence' && task[0] !== 'Daily' && task[11] === 'Brahm' && task[14] !== null)
+		.map((task) => ({
+			title: task[9],
+			description: task[10],
+			lastCompleted: task[14] ? `${getJsDateFromExcel(task[14])}` : 'N/A',
+			completeBy: task[16] ? `${getJsDateFromExcel(task[16])}` : 'N/A',
+		}));
+
+	return maintenanceTasks;
 };
 
-// Get tasks for the next week
-const getNextWeeksTasks = async (maintenanceLog: any) => {
-	try {
-		const maintenanceTasks = await getMaintenanceTasks(maintenanceLog);
-		const thisWeeksTasks = maintenanceTasks ? maintenanceTasks.filter((task) => {
+const getNextWeeksTasks = (convertedData: any[]) => {
+	const maintenanceTasks: IMaintenanceTask[] = getMaintenanceTasks(convertedData) as IMaintenanceTask[];
+	if (maintenanceTasks.length !== 0) {
+		const tasks = maintenanceTasks.filter((task) => {
 			const daysDifference = getTimeDifferenceFromNow(task.completeBy);
 			return daysDifference < 7;
-		}) : [];
-
+		});
+		const thisWeeksTasks = tasks.map((task) => {
+			console.log('task in thisWeeksTasks: ', task);
+			return {
+				...task,
+				lastCompleted: formatBasicDate(task.lastCompleted),
+				completeBy: `${formatBasicDate(task.completeBy)} - ${handleFormatDistanceToNow(task.completeBy)}`,
+			};
+		});
+		console.log('this weeks tasks: ', thisWeeksTasks);
 		return thisWeeksTasks;
-	} catch (err) {
-		console.error("Error getting this week's tasks: ", err);
-		throw new Error("There was an error getting this week's tasks");
 	}
 };
 
-// Get tasks for the next 30 days
-const getNextMonthsTasks = async (maintenanceLog: any) => {
+const getNextMonthsTasks = async (convertedData: any) => {
 	try {
-		const maintenanceTasks = await getMaintenanceTasks(maintenanceLog);
-		const thisMonthsTasks = maintenanceTasks ? maintenanceTasks.filter((task) => {
-			const daysDifference = getTimeDifferenceFromNow(task.completeBy);
-			if (daysDifference < 30 && daysDifference > 7) {
-				return daysDifference;
-			}
-		}) : [];
-
-		return thisMonthsTasks;
+		const maintenanceTasks = await getMaintenanceTasks(convertedData);
+		if (maintenanceTasks.length !== 0) {
+			const tasks = maintenanceTasks.filter((task) => {
+				const daysDifference = getTimeDifferenceFromNow(task.completeBy);
+				console.log('daysDifference: ', daysDifference);
+				return daysDifference < 30;
+			});
+			const thisMonthsTasks = tasks.map((task) => {
+				return {
+					...task,
+					lastCompleted: formatBasicDate(task.lastCompleted),
+					completeBy: `${formatBasicDate(task.completeBy)} - ${handleFormatDistanceToNow(task.completeBy)}`,
+				};
+			});
+			return thisMonthsTasks;
+		}
 	} catch (err) {
 		console.error("Error getting this month's tasks: ", err);
 		throw new Error("There was an error getting this month's tasks");
@@ -205,15 +213,17 @@ const getNextMonthsTasks = async (maintenanceLog: any) => {
 
 const handleGetTasks = async () => {
 	try {
-		let nextWeeksTasks: IMaintenanceTask[] = [];
-		let nextMonthsTasks: IMaintenanceTask[] = [];
-		const maintenanceLog = await xlsxToJsonFlow();
+		let nextWeeksTasks: IMaintenanceTask[] | undefined = [];
+		let nextMonthsTasks: IMaintenanceTask[] | undefined = [];
+		const convertedData = await xlsxToJsonFlow();
 
-		if (maintenanceLog) {
-			nextWeeksTasks = await getNextWeeksTasks(maintenanceLog);
-			nextMonthsTasks = await getNextMonthsTasks(maintenanceLog);
+		if (convertedData) {
+			nextWeeksTasks = await getNextWeeksTasks(convertedData);
+			nextMonthsTasks = await getNextMonthsTasks(convertedData);
+		} else {
+			console.log('No converted data');
 		}
-		if (nextWeeksTasks.length !== 0 && nextMonthsTasks.length !== 0) {
+		if (nextMonthsTasks && nextWeeksTasks && nextWeeksTasks.length !== 0 && nextMonthsTasks.length !== 0) {
 			console.log('This weeks tasks: ', nextWeeksTasks);
 			console.log('This weeks tasks: ', nextMonthsTasks);
 			return { nextWeeksTasks, nextMonthsTasks };
