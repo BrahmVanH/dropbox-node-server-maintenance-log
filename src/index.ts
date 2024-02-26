@@ -14,6 +14,7 @@ app.use(express.json());
 
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
+	
 	handleSendEmail();
 
 	// Schedule the task to run every Sunday at 00:00 (midnight)

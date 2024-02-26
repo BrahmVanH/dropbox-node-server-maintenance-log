@@ -20,10 +20,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 
 import { promisify } from 'util';
 import { IMaintenanceTask, getJsDateFromExcel, getTimeDifferenceFromNow } from '../utils/helpers';
-import maintenanceLog from '../../dist/maintenanceLog.json';
-
-// Configure dotenv
-// configDotenv();
+import maintenanceLog from '../../download/maintenanceLog.json';
 
 // Define shared link for desired file from Dropbox
 
@@ -81,7 +78,7 @@ const fetchFromDropbox = async () => {
 		const data = await dbx.sharingGetSharedLinkFile({ url: sharedLink });
 		if (data) {
 			const fileName = data.result.name.split(' ').join('');
-			const filePath = `dist/${fileName}`;
+			const filePath = `download/${fileName}`;
 			await writeFileAsync(filePath, (<any>data).result.fileBinary, { encoding: 'binary' });
 			console.log(`File: ${fileName} saved.`);
 			return { writeSuccessful: true, filePath };
@@ -146,20 +143,27 @@ const xlsxToJsonFlow = async () => {
 	}
 };
 
-const getMaintenanceTasks = () => {
-	if (!Array.isArray(maintenanceLog)) {
-		throw new Error('Maintenance tasks data is not an array.');
-	}
-	const maintenanceTasks: IMaintenanceTask[] = maintenanceLog
-		.filter((task) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== 'Cadence' && task[0] !== 'Daily' && task[5] === 'Brahm' && task[8] !== null)
-		.map((task) => ({
-			title: task[3],
-			description: task[4],
-			lastCompleted: task[8] ? formatDistanceToNowStrict(task[8]) : 'N/A',
-			date: task[10],
-		})) as IMaintenanceTask[];
+const getMaintenanceTasks = async () => {
+	let maintenanceLog: any;
+	try {
+		maintenanceLog = await import('../../download/maintenanceLog.json');
+		if (!Array.isArray(maintenanceLog)) {
+			throw new Error('Maintenance tasks data is not an array.');
+		}
+		const maintenanceTasks: IMaintenanceTask[] = maintenanceLog
+			.filter((task) => task[3] !== null && task[4] !== null && task[10] !== null && task[0] !== 'Cadence' && task[0] !== 'Daily' && task[5] === 'Brahm' && task[8] !== null)
+			.map((task) => ({
+				title: task[3],
+				description: task[4],
+				lastCompleted: task[8] ? formatDistanceToNowStrict(task[8]) : 'N/A',
+				date: task[10],
+			})) as IMaintenanceTask[];
 
-	return maintenanceTasks;
+		return maintenanceTasks;
+	} catch (err) {
+		console.error('Error getting maintenance tasks: ', err);
+		throw new Error('There was an error getting maintenance tasks');
+	}
 };
 
 const getNextWeeksTasks = () => {
