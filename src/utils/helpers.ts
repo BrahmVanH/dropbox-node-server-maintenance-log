@@ -12,7 +12,7 @@ export interface IMaintenanceTask {
 
 export const formatBasicDate = (date: string) => {
 	const month = new Date(date).getMonth() + 1;
-	const day = new Date(date).getDate();
+	const day = new Date(date).getDate() + 1;
 	const year = new Date(date).getFullYear();
 	const formattedDate = `${month}/${day}/${year}`;
 	return formattedDate;
