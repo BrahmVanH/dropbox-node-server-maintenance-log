@@ -65,6 +65,8 @@ const formatEmailText = (nextWeeksTasks: IMaintenanceTask[], nextMonthsTasks: IM
 };
 
 export const handleSendEmail = async () => {
+			console.log('Fetching Dropbox data and sending email...');
+
 	try {
 		const { nextWeeksTasks, nextMonthsTasks } = (await handleGetTasks()) as { nextWeeksTasks: IMaintenanceTask[]; nextMonthsTasks: IMaintenanceTask[] };
 		if (nextWeeksTasks.length !== 0 && nextMonthsTasks.length !== 0) {

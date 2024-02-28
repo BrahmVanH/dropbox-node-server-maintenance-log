@@ -20,9 +20,8 @@ app.listen(PORT, () => {
 	// Schedule the task to run every Tuesday at 04:00am
 	cron.schedule(
 		'0 4 * * 2',
-		() => {
-			console.log('Fetching Dropbox data and sending email...');
-			handleSendEmail;
+		async () => {
+			await handleSendEmail();
 		},
 		{ timezone: 'America/New_York' }
 	);
