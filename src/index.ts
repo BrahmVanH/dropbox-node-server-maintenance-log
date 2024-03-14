@@ -14,9 +14,6 @@ app.use(express.json());
 
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
-
-	handleSendEmail();
-
 	// Schedule the task to run every Tuesday at 04:00am
 	cron.schedule(
 		'0 4 * * 2',
