@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/node';
+
 // Import fetch function for HTTP requests to the Dropbox API
 import fetch from 'isomorphic-fetch';
 
@@ -7,15 +9,13 @@ import { Dropbox } from 'dropbox';
 // Import xlsx module from to parse xlsx files
 import xlsx from 'node-xlsx';
 
-// Import the file system module
-import FileSystem from 'fs';
-
-import { promisify } from 'util';
+// Import helper functions
 import { formatBasicDate, getJsDateFromExcel, getTimeDifferenceFromNow, handleFormatDistanceToNow } from '../utils/helpers';
 
+// Import IMaintenanceTask type
 import { IMaintenanceTask } from '../types';
 
-
+// Refresh access token
 const refreshAccessToken = async (refreshToken: string, appKey: string, appSecret: string) => {
 	try {
 		const response = await fetch('https://api.dropbox.com/oauth2/token', {
@@ -43,7 +43,7 @@ const refreshAccessToken = async (refreshToken: string, appKey: string, appSecre
 
 		return data.access_token;
 	} catch (error) {
-		console.error('Error refreshing access token:', error);
+		Sentry.captureException(error);
 	}
 };
 
@@ -69,7 +69,7 @@ const fetchFromDropbox = async () => {
 			return { data: (<any>data).result.fileBinary };
 		}
 	} catch (err) {
-		console.error('Error fetching file from Dropbox: ', err);
+		Sentry.captureException(err);
 		throw new Error('There was an error fetching file from Dropbox');
 	}
 	return { data: null };
@@ -86,7 +86,7 @@ const parseXlsxFile = async (xlsxData: any) => {
 
 		return data;
 	} catch (err) {
-		console.error('Something went wrong parsing xlsx file: ', err);
+		Sentry.captureException(err);
 		throw new Error('There was an error parsing xlsx file');
 	}
 };
@@ -103,9 +103,8 @@ export const xlsxToJsonFlow = async () => {
 			console.log('File not parsed, possibly no data or not an xlsx file.');
 			return false;
 		}
-
 	} catch (err) {
-		console.error('Error downloading and parsing file: ', err);
+		Sentry.captureException(err);
 		throw new Error('There was an error downloading and parsing file');
 	}
 };
@@ -127,7 +126,10 @@ const getMaintenanceTasks = (maintenanceJson: any[]) => {
 };
 
 const getNextWeeksTasks = (convertedData: any[]) => {
-	const maintenanceTasks: IMaintenanceTask[] = getMaintenanceTasks(convertedData) as IMaintenanceTask[];
+	if (!convertedData) {
+		throw new Error('No data provided');
+	}
+	const maintenanceTasks: IMaintenanceTask[] = getMaintenanceTasks(convertedData);
 	if (maintenanceTasks.length !== 0) {
 		const tasks = maintenanceTasks.filter((task) => {
 			const daysDifference = getTimeDifferenceFromNow(task.completeBy);
@@ -162,7 +164,7 @@ const getNextMonthsTasks = async (convertedData: any) => {
 			return thisMonthsTasks;
 		}
 	} catch (err) {
-		console.error("Error getting this month's tasks: ", err);
+		Sentry.captureException(err);
 		throw new Error("There was an error getting this month's tasks");
 	}
 };
@@ -176,16 +178,12 @@ const handleGetTasks = async () => {
 		if (maintenanceJson) {
 			nextWeeksTasks = await getNextWeeksTasks(maintenanceJson);
 			nextMonthsTasks = await getNextMonthsTasks(maintenanceJson);
-		} else {
-			console.log('No json data');
 		}
 		if (nextMonthsTasks && nextWeeksTasks && nextWeeksTasks.length !== 0 && nextMonthsTasks.length !== 0) {
-			console.log('This weeks tasks: ', nextWeeksTasks);
-			console.log('This weeks tasks: ', nextMonthsTasks);
 			return { nextWeeksTasks, nextMonthsTasks };
 		}
 	} catch (err) {
-		console.error("Error getting this week's tasks: ", err);
+		Sentry.captureException(err);
 		throw new Error("There was an error getting this week's tasks");
 	}
 };

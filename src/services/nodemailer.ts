@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import nodeMailer from 'nodemailer';
 
 const sendEmail = async (text: string) => {
@@ -26,7 +27,7 @@ const sendEmail = async (text: string) => {
 		await transporter.sendMail(mailOptions);
 		console.log('Email sent');
 	} catch (error) {
-		console.error('Error sending email:', error);
+		Sentry.captureException(error);
 	}
 };
 

@@ -1,4 +1,4 @@
-import Sentry from '@sentry/node';
+import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import express, { Request, NextFunction } from 'express';
 import dotenv from 'dotenv';
@@ -35,9 +35,6 @@ app.use(Sentry.Handlers.tracingHandler());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.get('/debug-sentry', function mainHandler(req, res) {
-	throw new Error('My first Sentry error!');
-});
 
 // The error handler must be registered before any other error middleware and after all controllers
 app.use(Sentry.Handlers.errorHandler());
