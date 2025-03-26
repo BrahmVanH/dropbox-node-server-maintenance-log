@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import cron from 'node-cron';
 import { handleSendEmail } from './utils/helpers';
 import { IResponse } from './types';
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ?? 3000;
 
 const app = express();
 
