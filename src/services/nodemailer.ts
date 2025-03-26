@@ -25,7 +25,6 @@ const sendEmail = async (text: string) => {
 
 	try {
 		await transporter.sendMail(mailOptions);
-		console.log('Email sent');
 	} catch (error) {
 		Sentry.captureException(error);
 	}
